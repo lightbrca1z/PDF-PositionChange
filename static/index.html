@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF向きなおし</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <main class="shell">
+      <header class="brand">
+        <p class="brand-mark">PDF向きなおし</p>
+        <p class="brand-lead">アップロードして回転し、向きが残るPDFを保存します。</p>
+      </header>
+
+      <section class="stage" id="stage">
+        <label class="dropzone" id="dropzone" for="file-input">
+          <input id="file-input" type="file" accept="application/pdf,.pdf" hidden />
+          <span class="dropzone-title">PDFをドロップ</span>
+          <span class="dropzone-sub">またはクリックして選択</span>
+        </label>
+
+        <div class="workspace is-hidden" id="workspace">
+          <div class="preview-pane">
+            <iframe id="preview" title="PDFプレビュー"></iframe>
+            <p class="meta" id="meta"></p>
+          </div>
+
+          <div class="controls" role="group" aria-label="回転操作">
+            <button type="button" class="btn" data-degrees="-90" id="btn-left">
+              左に90°
+            </button>
+            <button type="button" class="btn" data-degrees="180" id="btn-flip">
+              180°
+            </button>
+            <button type="button" class="btn" data-degrees="90" id="btn-right">
+              右に90°
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-download">
+              ダウンロード
+            </button>
+            <button type="button" class="btn btn-ghost" id="btn-reset">
+              別のファイル
+            </button>
+          </div>
+        </div>
+
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>

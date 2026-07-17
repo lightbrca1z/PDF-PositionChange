@@ -1,0 +1,232 @@
+:root {
+  --ink: #10242b;
+  --moss: #1a7a6d;
+  --moss-deep: #0c4a42;
+  --accent: #2f6fed;
+  --line: rgba(16, 36, 43, 0.14);
+  --shadow: 0 24px 60px rgba(16, 36, 43, 0.18);
+  --radius: 18px;
+  --font-brand: "Syne", sans-serif;
+  --font-body: "IBM Plex Sans JP", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  color: var(--ink);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(ellipse 80% 55% at 10% 6%, rgba(47, 111, 237, 0.16), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 10%, rgba(26, 122, 109, 0.22), transparent 50%),
+    linear-gradient(160deg, #edf4f6 0%, #d9e8ea 48%, #cfe3de 100%);
+  overflow-x: hidden;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(16, 36, 43, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 36, 43, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at center, black 35%, transparent 85%);
+}
+
+.shell {
+  width: min(1080px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 3.5rem 0 4rem;
+  position: relative;
+}
+
+.brand {
+  margin-bottom: 2.25rem;
+  animation: rise 0.7s ease both;
+}
+
+.brand-mark {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-weight: 800;
+  font-size: clamp(2.6rem, 7vw, 4.6rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  color: var(--moss-deep);
+}
+
+.brand-lead {
+  margin: 0.85rem 0 0;
+  max-width: 28rem;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: rgba(18, 32, 28, 0.72);
+}
+
+.stage {
+  animation: rise 0.8s 0.08s ease both;
+}
+
+.dropzone {
+  display: grid;
+  place-content: center;
+  gap: 0.4rem;
+  min-height: 280px;
+  border: 2px dashed rgba(12, 74, 66, 0.35);
+  border-radius: calc(var(--radius) + 6px);
+  background:
+    linear-gradient(145deg, rgba(247, 252, 252, 0.92), rgba(214, 232, 228, 0.78));
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.dropzone:hover,
+.dropzone.is-dragover {
+  border-color: var(--moss);
+  transform: translateY(-2px);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(206, 230, 224, 0.88));
+}
+
+.dropzone-title {
+  font-family: var(--font-brand);
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.dropzone-sub {
+  color: rgba(18, 32, 28, 0.55);
+  font-size: 0.95rem;
+}
+
+.workspace {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.workspace.is-hidden,
+.dropzone.is-hidden {
+  display: none;
+}
+
+.preview-pane {
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--ink);
+  box-shadow: var(--shadow);
+  min-height: 520px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+
+#preview {
+  width: 100%;
+  min-height: 520px;
+  border: 0;
+  background: #1a1a1a;
+}
+
+.meta {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: rgba(247, 252, 252, 0.96);
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+  color: rgba(16, 36, 43, 0.7);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.btn {
+  appearance: none;
+  border: 1px solid rgba(12, 74, 66, 0.25);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  padding: 0.85rem 1.15rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--moss);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--moss);
+  border-color: var(--moss);
+  color: #f4fffc;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--moss-deep);
+  border-color: var(--moss-deep);
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+.status {
+  min-height: 1.4rem;
+  margin: 1rem 0 0;
+  color: #c23b2e;
+  font-size: 0.92rem;
+}
+
+.status.is-ok {
+  color: var(--moss-deep);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding-top: 2.25rem;
+  }
+
+  .preview-pane,
+  #preview {
+    min-height: 380px;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .btn-primary,
+  .btn-ghost {
+    grid-column: 1 / -1;
+  }
+}
