@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import uuid
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
@@ -124,11 +125,18 @@ def download(session_id: str, filename: str = "rotated.pdf") -> Response:
     if not safe_name.startswith("向きなおし_"):
         safe_name = f"向きなおし_{safe_name}"
 
+    # HTTPヘッダーはlatin-1しか扱えないため、日本語名はfilename*(RFC 5987)で渡す
+    ascii_fallback = "rotated.pdf"
+    encoded_name = quote(safe_name)
+
     return Response(
         content=data,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="{safe_name}"',
+            "Content-Disposition": (
+                f'attachment; filename="{ascii_fallback}"; '
+                f"filename*=UTF-8''{encoded_name}"
+            ),
             "Cache-Control": "no-store",
         },
     )
