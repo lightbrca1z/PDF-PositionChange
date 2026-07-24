@@ -24,7 +24,7 @@ class SessionData(TypedDict):
     filename: str
 
 
-# session_id -> SessionData に変更
+# session_id -> SessionData (バイトデータと元のファイル名を保持)
 _sessions: dict[str, SessionData] = {}
 
 
@@ -83,7 +83,7 @@ async def upload(file: UploadFile = File(...)) -> dict:
         ) from exc
 
     session_id = str(uuid.uuid4())
-    # バイトデータと一緒に元のファイル名も保存する
+    # 元のファイル名を保持
     _sessions[session_id] = {
         "data": data,
         "filename": Path(file.filename).name,
@@ -111,9 +111,10 @@ def rotate(body: RotateRequest) -> Response:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail="回転に失敗しました") from exc
+        raise HTTPException(
+            status_code=500, detail="回転に失敗しました"
+        ) from exc
 
-    # 回転後のPDFデータのみ更新
     session["data"] = rotated
     return Response(
         content=rotated,
@@ -144,7 +145,7 @@ def download(session_id: str) -> Response:
             status_code=404, detail="セッションが見つかりません"
         )
 
-    # 保存されていた元のファイル名を使用
+    # 「向きなおし_」を付けず、アップロード時の元のファイル名を使用
     filename = session["filename"]
 
     ascii_fallback = "download.pdf"
