@@ -3,13 +3,14 @@ from __future__ import annotations
 import io
 import uuid
 from pathlib import Path
+from typing import TypedDict
 from urllib.parse import quote
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pypdf import PdfReader, PdfWriter
 from pydantic import BaseModel, Field
+from pypdf import PdfReader, PdfWriter
 
 STATIC_DIR = Path(__file__).parent / "static"
 MAX_UPLOAD_BYTES = 40 * 1024 * 1024
@@ -17,8 +18,14 @@ MAX_UPLOAD_BYTES = 40 * 1024 * 1024
 app = FastAPI(title="PDF向きなおし")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# session_id -> PDF bytes
-_sessions: dict[str, bytes] = {}
+
+class SessionData(TypedDict):
+    data: bytes
+    filename: str
+
+
+# session_id -> SessionData に変更
+_sessions: dict[str, SessionData] = {}
 
 
 class RotateRequest(BaseModel):
@@ -53,13 +60,17 @@ def index() -> FileResponse:
 @app.post("/api/upload")
 async def upload(file: UploadFile = File(...)) -> dict:
     if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="PDFファイルを選んでください")
+        raise HTTPException(
+            status_code=400, detail="PDFファイルを選んでください"
+        )
 
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="空のファイルです")
     if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=400, detail="ファイルサイズは40MBまでです")
+        raise HTTPException(
+            status_code=400, detail="ファイルサイズは40MBまでです"
+        )
 
     try:
         reader = PdfReader(io.BytesIO(data))
@@ -67,10 +78,16 @@ async def upload(file: UploadFile = File(...)) -> dict:
         if page_count == 0:
             raise ValueError("ページがありません")
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail="PDFとして読み込めませんでした") from exc
+        raise HTTPException(
+            status_code=400, detail="PDFとして読み込めませんでした"
+        ) from exc
 
     session_id = str(uuid.uuid4())
-    _sessions[session_id] = data
+    # バイトデータと一緒に元のファイル名も保存する
+    _sessions[session_id] = {
+        "data": data,
+        "filename": Path(file.filename).name,
+    }
 
     return {
         "session_id": session_id,
@@ -82,18 +99,22 @@ async def upload(file: UploadFile = File(...)) -> dict:
 
 @app.post("/api/rotate")
 def rotate(body: RotateRequest) -> Response:
-    data = _sessions.get(body.session_id)
-    if data is None:
-        raise HTTPException(status_code=404, detail="セッションが見つかりません。再度アップロードしてください")
+    session = _sessions.get(body.session_id)
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="セッションが見つかりません。再度アップロードしてください",
+        )
 
     try:
-        rotated = _rotate_pdf(data, body.degrees)
+        rotated = _rotate_pdf(session["data"], body.degrees)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=500, detail="回転に失敗しました") from exc
 
-    _sessions[body.session_id] = rotated
+    # 回転後のPDFデータのみ更新
+    session["data"] = rotated
     return Response(
         content=rotated,
         media_type="application/pdf",
@@ -103,34 +124,34 @@ def rotate(body: RotateRequest) -> Response:
 
 @app.get("/api/preview/{session_id}")
 def preview(session_id: str) -> Response:
-    data = _sessions.get(session_id)
-    if data is None:
-        raise HTTPException(status_code=404, detail="セッションが見つかりません")
+    session = _sessions.get(session_id)
+    if session is None:
+        raise HTTPException(
+            status_code=404, detail="セッションが見つかりません"
+        )
     return Response(
-        content=data,
+        content=session["data"],
         media_type="application/pdf",
         headers={"Cache-Control": "no-store"},
     )
 
 
 @app.get("/api/download/{session_id}")
-def download(session_id: str, filename: str = "rotated.pdf") -> Response:
-    data = _sessions.get(session_id)
-    if data is None:
-        raise HTTPException(status_code=404, detail="セッションが見つかりません")
+def download(session_id: str) -> Response:
+    session = _sessions.get(session_id)
+    if session is None:
+        raise HTTPException(
+            status_code=404, detail="セッションが見つかりません"
+        )
 
-    safe_name = Path(filename).name
-    if not safe_name.lower().endswith(".pdf"):
-        safe_name += ".pdf"
-    if not safe_name.startswith("向きなおし_"):
-        safe_name = f"向きなおし_{safe_name}"
+    # 保存されていた元のファイル名を使用
+    filename = session["filename"]
 
-    # HTTPヘッダーはlatin-1しか扱えないため、日本語名はfilename*(RFC 5987)で渡す
-    ascii_fallback = "rotated.pdf"
-    encoded_name = quote(safe_name)
+    ascii_fallback = "download.pdf"
+    encoded_name = quote(filename)
 
     return Response(
-        content=data,
+        content=session["data"],
         media_type="application/pdf",
         headers={
             "Content-Disposition": (
