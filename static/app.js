@@ -122,7 +122,7 @@ async function download() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `向きなおし_${filename || "document.pdf"}`;
+    a.download = filename || "document.pdf";
     document.body.appendChild(a);
     a.click();
     a.remove();
