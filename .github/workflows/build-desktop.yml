@@ -1,0 +1,87 @@
+name: デスクトップアプリのビルド
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 依存関係をインストール
+        run: pip install -r requirements-build.txt
+
+      - name: Windows用 .exe をビルド
+        run: |
+          pyinstaller `
+            --noconfirm `
+            --clean `
+            --onefile `
+            --console `
+            --name "PDF向きなおし" `
+            --add-data "static;static" `
+            --collect-all uvicorn `
+            launcher.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDF向きなおし-windows
+          path: dist/PDF向きなおし.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 依存関係をインストール
+        run: pip install -r requirements-build.txt
+
+      - name: macOS用 .app をビルド
+        run: |
+          pyinstaller \
+            --noconfirm \
+            --clean \
+            --onedir \
+            --windowed \
+            --name "PDF向きなおし" \
+            --add-data "static:static" \
+            --collect-all uvicorn \
+            launcher.py
+
+      - name: .app を zip 化
+        run: |
+          cd dist
+          zip -r "PDF向きなおし-mac.zip" "PDF向きなおし.app"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDF向きなおし-mac
+          path: dist/PDF向きなおし-mac.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: GitHub Release を作成して添付
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/PDF向きなおし-windows/PDF向きなおし.exe
+            artifacts/PDF向きなおし-mac/PDF向きなおし-mac.zip

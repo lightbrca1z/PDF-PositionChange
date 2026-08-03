@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import sys
 import uuid
 from pathlib import Path
 from typing import TypedDict
@@ -12,7 +13,16 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pypdf import PdfReader, PdfWriter
 
-STATIC_DIR = Path(__file__).parent / "static"
+
+def _resource_dir() -> Path:
+    """PyInstallerでexe/appに固めた場合でも静的ファイルを見つけられるようにする"""
+    base = getattr(sys, "_MEIPASS", None)
+    if base:
+        return Path(base)
+    return Path(__file__).parent
+
+
+STATIC_DIR = _resource_dir() / "static"
 MAX_UPLOAD_BYTES = 40 * 1024 * 1024
 
 app = FastAPI(title="PDF向きなおし")
